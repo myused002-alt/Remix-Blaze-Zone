@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Blaze Zone</string>
+    <string name="auth_tagline">TACTICAL BATTLE ROYALE</string>
+    <string name="auth_subtitle">Drop onto the island, loot elite weapons, deploy Gloo Walls, and outlast every survivor in rapid 3-minute firefights.</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="deploy_match">DEPLOY NOW</string>
+    <string name="nav_lobby">Lobby</string>
+    <string name="nav_armory">Armory</string>
+    <string name="nav_career">Profile</string>
+    <string name="booyah_title">BOOYAH!</string>
+    <string name="eliminated_title">ELIMINATED</string>
+    <string name="return_lobby">Return to Lobby</string>
+    <string name="play_again">Drop Again</string>
+</resources>

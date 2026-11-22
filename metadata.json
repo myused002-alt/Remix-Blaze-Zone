@@ -1,0 +1,8 @@
+{
+  "name": "Remix Blaze Zone",
+  "description": "Fast-paced tactical battle royale survival shooter with parachute drops, shrinking safe zones, gloo walls, and ranked cloud progression.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

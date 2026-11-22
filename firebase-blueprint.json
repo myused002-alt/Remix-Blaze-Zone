@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated battle royale player profile, rank progression, currency, and loadout selection.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the player."
+        },
+        "callsign": {
+          "type": "string",
+          "description": "Player combat callsign (3-24 characters)."
+        },
+        "rankPoints": {
+          "type": "integer",
+          "description": "Current ranked battle points."
+        },
+        "totalMatches": {
+          "type": "integer",
+          "description": "Total matches played."
+        },
+        "booyahs": {
+          "type": "integer",
+          "description": "Total first-place victories."
+        },
+        "totalKills": {
+          "type": "integer",
+          "description": "Cumulative eliminations."
+        },
+        "totalDamage": {
+          "type": "integer",
+          "description": "Cumulative damage dealt."
+        },
+        "goldCoins": {
+          "type": "integer",
+          "description": "In-game earned gold currency for unlocking characters."
+        },
+        "selectedCharacter": {
+          "type": "string",
+          "enum": ["HAYATO", "KELLY", "ALOK", "CHRONO"],
+          "description": "Active tactical survivor character."
+        },
+        "selectedStarterSkin": {
+          "type": "string",
+          "enum": ["SCORCH", "CYBER", "SHADOW", "VIPER"],
+          "description": "Active tactical weapon skin theme."
+        },
+        "unlockedCharacters": {
+          "type": "string",
+          "description": "Bounded array (max 10) of unlocked character IDs."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "callsign",
+        "rankPoints",
+        "totalMatches",
+        "booyahs",
+        "totalKills",
+        "totalDamage",
+        "goldCoins",
+        "selectedCharacter",
+        "selectedStarterSkin",
+        "unlockedCharacters",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MatchRecord": {
+      "title": "MatchRecord",
+      "description": "Immutable combat summary for a completed battle royale match.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the match owner."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["CLASSIC", "CLASH_RUSH"],
+          "description": "Match game mode."
+        },
+        "placement": {
+          "type": "integer",
+          "description": "Final placement rank (1-20)."
+        },
+        "kills": {
+          "type": "integer",
+          "description": "Eliminations scored in the match."
+        },
+        "damageDealt": {
+          "type": "integer",
+          "description": "Total damage dealt in the match."
+        },
+        "survivalSeconds": {
+          "type": "integer",
+          "description": "Time survived in seconds."
+        },
+        "rankPointsDelta": {
+          "type": "integer",
+          "description": "Rank points gained or lost."
+        },
+        "coinsEarned": {
+          "type": "integer",
+          "description": "Gold coins awarded."
+        },
+        "victory": {
+          "type": "boolean",
+          "description": "True when placement is 1 (Booyah!)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of match completion (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "mode",
+        "placement",
+        "kills",
+        "damageDealt",
+        "survivalSeconds",
+        "rankPointsDelta",
+        "coinsEarned",
+        "victory",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores each player's career stats, rank, currency, and equipped character."
+    },
+    "/users/{userId}/matches/{matchId}": {
+      "schema": {
+        "$ref": "#/entities/MatchRecord"
+      },
+      "description": "Stores each player's completed match history logs."
+    }
+  }
+}

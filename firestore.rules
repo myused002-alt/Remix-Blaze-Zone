@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened primitive helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCharacter(c) {
+      return c in ['HAYATO', 'KELLY', 'ALOK', 'CHRONO'];
+    }
+
+    function isValidSkin(s) {
+      return s in ['SCORCH', 'CYBER', 'SHADOW', 'VIPER'];
+    }
+
+    function isValidMatchMode(m) {
+      return m in ['CLASSIC', 'CLASH_RUSH'];
+    }
+
+    // Validation helper for PlayerProfile
+    function isValidPlayerProfile(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.callsign is string && data.callsign.size() >= 3 && data.callsign.size() <= 24 &&
+             data.rankPoints is int && data.rankPoints >= 0 && data.rankPoints <= 1000000 &&
+             data.totalMatches is int && data.totalMatches >= 0 && data.totalMatches <= 1000000 &&
+             data.booyahs is int && data.booyahs >= 0 && data.booyahs <= 1000000 &&
+             data.totalKills is int && data.totalKills >= 0 && data.totalKills <= 10000000 &&
+             data.totalDamage is int && data.totalDamage >= 0 && data.totalDamage <= 1000000000 &&
+             data.goldCoins is int && data.goldCoins >= 0 && data.goldCoins <= 10000000 &&
+             isValidCharacter(data.selectedCharacter) &&
+             isValidSkin(data.selectedStarterSkin) &&
+             data.unlockedCharacters is list &&
+             data.unlockedCharacters.size() >= 1 &&
+             data.unlockedCharacters.size() <= 10 &&
+             data.unlockedCharacters[0] is string &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Validation helper for MatchRecord
+    function isValidMatchRecord(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             isValidMatchMode(data.mode) &&
+             data.placement is int && data.placement >= 1 && data.placement <= 20 &&
+             data.kills is int && data.kills >= 0 && data.kills <= 25 &&
+             data.damageDealt is int && data.damageDealt >= 0 && data.damageDealt <= 50000 &&
+             data.survivalSeconds is int && data.survivalSeconds >= 0 && data.survivalSeconds <= 3600 &&
+             data.rankPointsDelta is int && data.rankPointsDelta >= -100 && data.rankPointsDelta <= 250 &&
+             data.coinsEarned is int && data.coinsEarned >= 0 && data.coinsEarned <= 2000 &&
+             data.victory is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // User profile document
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'callsign', 'rankPoints', 'totalMatches', 'booyahs',
+                         'totalKills', 'totalDamage', 'goldCoins', 'selectedCharacter',
+                         'selectedStarterSkin', 'unlockedCharacters', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'callsign', 'rankPoints', 'totalMatches', 'booyahs',
+                         'totalKills', 'totalDamage', 'goldCoins', 'selectedCharacter',
+                         'selectedStarterSkin', 'unlockedCharacters', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt <= request.time &&
+                       isValidPlayerProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidPlayerProfile(incoming(), userId) && (
+                         // Action 1: Record completed match stats & rewards
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'rankPoints', 'totalMatches', 'booyahs', 'totalKills',
+                           'totalDamage', 'goldCoins', 'updatedAt'
+                         ]) ||
+                         // Action 2: Update callsign / loadout / unlock character
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'callsign', 'selectedCharacter', 'selectedStarterSkin',
+                           'unlockedCharacters', 'goldCoins', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if false;
+
+      // Match history subcollection
+      match /matches/{matchId} {
+        allow get: if isOwner(userId) && isValidId(matchId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(matchId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'mode', 'placement', 'kills', 'damageDealt',
+                           'survivalSeconds', 'rankPointsDelta', 'coinsEarned',
+                           'victory', 'createdAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'mode', 'placement', 'kills', 'damageDealt',
+                           'survivalSeconds', 'rankPointsDelta', 'coinsEarned',
+                           'victory', 'createdAt'
+                         ]) &&
+                         isValidMatchRecord(incoming(), userId);
+
+        // Match logs are immutable historical records
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(matchId);
+      }
+    }
+  }
+}
